@@ -1,4 +1,3 @@
-"""Cálculos pesados con caché, para que los reruns de Streamlit sean baratos."""
 import streamlit as st
 
 from utilidades import modelo, pareto
@@ -12,7 +11,7 @@ def calcular_malla(m, s_in, cp, ea, k0, tau, n_t, n_e):
 
 @st.cache_data
 def calcular_frontera(df):
-    fr = pareto.frontera_pareto(df[df["factible"]])
+    fr = pareto.frontera_pareto(df[df["Factible"]])
     if fr.empty:
         return fr, 0, []
     idx, dist = pareto.punto_rodilla(fr)
