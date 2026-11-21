@@ -242,7 +242,4 @@ with tab_mod:
         "- La calibración de k₀ es pedagógica, no un dato de literatura.\n"
         "- El incremento adiabático de 15 K a conversión completa es una elección didáctica.\n"
         "- El intercambiador usa efectividad constante, con Cp constante y sin pérdidas.\n"
-        "- Q_horno negativo se conserva: indica excedente de calor.")de ko es pedagógica, no un dato de literatura.\n"
-        "- El incremento adiabático de 15 K a conversión completa es una elección didáctica.\n"
-        "- El intercambiador usa efectividad constante, con Cp constante y sin pérdidas.\n"
-        "- Q_horno negativo se conserva: indica excedente de calor.")
+        "- Q_horno negativo se conserva: indica excedente de calor."
