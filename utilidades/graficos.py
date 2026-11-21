@@ -12,7 +12,7 @@ def fig_factibilidad(df, t_in=None, eps=None):
     fig = go.Figure()
     fig.add_trace(go.Heatmap(
         x=z.columns, y=z.index, z=z.values, zmin=0, zmax=50, colorscale="RdYlGn_r",
-        colorbar=dict(title=dict(text="Sout (ppm)", side="right"), thickness=14, len=0.85),
+        colorbar=dict(title=dict(text="$S_{out}$ (ppm)", side="right"), thickness=14, len=0.85),
         hovertemplate="T_in=%{x:.1f} K<br>ε=%{y:.3f}<br>S_out=%{z:.2f} ppm<extra></extra>",
         name="Sout"))
     fig.add_trace(go.Contour(
