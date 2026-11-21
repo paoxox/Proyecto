@@ -11,7 +11,7 @@ def calcular_malla(m, s_in, cp, ea, k0, tau, n_t, n_e):
 
 @st.cache_data
 def calcular_frontera(df):
-    fr = pareto.frontera_pareto(df[df["Factible"]])
+    fr = pareto.frontera_pareto(df[df["factible"]])
     if fr.empty:
         return fr, 0, []
     idx, dist = pareto.punto_rodilla(fr)
