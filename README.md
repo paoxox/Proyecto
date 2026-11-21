@@ -1,8 +1,7 @@
 # HDS multiobjetivo con Streamlit
 
 Aplicación para estudiar el compromiso entre conversión de azufre y carga térmica del
-horno en una unidad de hidrodesulfuración simplificada (Curso de Optimización de
-Procesos, Ingeniería Química).
+horno en una unidad de hidrodesulfuración simplificada.
 
 ## Cómo ejecutarla
 
@@ -28,11 +27,11 @@ utilidades/
 
 ## Qué incluye
 
-- Controles para T_in, ε y los parámetros del modelo (con los rangos del enunciado).
-- Malla T_in × ε con marcado de factibilidad (S_out ≤ 10 ppm).
+- Controles para Tin, ε y los parámetros del modelo
+- Malla Tin × ε con marcado de factibilidad (Sout ≤ 10 ppm).
 - Frontera de Pareto (sin puntos dominados) y knee point por distancia perpendicular
   con objetivos normalizados min-max.
-- Sensibilidad ±10 % en ṁ, Cp, Ea, k₀ y τ; barrido de S_in entre 450 y 550 ppm.
+- Sensibilidad ±10 % en ṁ, Cp, Ea, k₀ y τ; barrido de Sin entre 450 y 550 ppm.
 - Los tres sanity checks de validación.
 - Estudio opcional de la rodilla frente al peso de la energía.
 
