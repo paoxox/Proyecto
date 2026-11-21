@@ -4,48 +4,66 @@ import plotly.graph_objects as go
 AZUL, ROJO, GRIS, VERDE, NARANJA = "#1F77B4", "#D62728", "#9AA0A6", "#2CA02C", "#FF7F0E"
 
 
+LEYENDA_ABAJO = dict(orientation="h", yanchor="top", y=-0.22, xanchor="left", x=0)
+
+
 def fig_factibilidad(df, t_in=None, eps=None):
-    """Mapa T_in vs eps coloreado por S_out."""
+    """Mapa T_in vs eps coloreado por S_out; la línea negra marca S_out = 10 ppm."""
+    z = df.pivot(index="eps", columns="T_in", values="S_out")
     fig = go.Figure()
-    fig.add_trace(go.Scattergl(
-        x=df["T_in"], y=df["eps"], mode="markers",
-        marker=dict(size=5, color=df["S_out"], colorscale="RdYlGn_r",
-                    cmax=50, cmin=0, colorbar=dict(title="S_out (ppm)")),
-        customdata=df[["X_S", "Q_kW"]],
-        hovertemplate="T_in=%{x:.1f} K<br>eps=%{y:.3f}<br>S_out=%{marker.color:.2f} ppm"
-                      "<br>X_S=%{customdata[0]:.4f}<br>Q=%{customdata[1]:.0f} kW<extra></extra>",
-        name="malla"))
+    fig.add_trace(go.Heatmap(
+        x=z.columns, y=z.index, z=z.values, zmin=0, zmax=50, colorscale="RdYlGn_r",
+        colorbar=dict(title=dict(text="S_out (ppm)", side="right"), thickness=14, len=0.85),
+        hovertemplate="T_in=%{x:.1f} K<br>ε=%{y:.3f}<br>S_out=%{z:.2f} ppm<extra></extra>",
+        name="S_out"))
+    fig.add_trace(go.Contour(
+        x=z.columns, y=z.index, z=z.values, showscale=False, hoverinfo="skip",
+        contours=dict(start=10, end=10, size=1, coloring="lines"),
+        line=dict(color="black", width=2), name="límite 10 ppm", showlegend=True))
     if t_in is not None:
         fig.add_trace(go.Scatter(x=[t_in], y=[eps], mode="markers", name="punto elegido",
-                                 marker=dict(size=14, symbol="x", color="black")))
-    fig.update_layout(xaxis_title="T_in (K)", yaxis_title="Efectividad ε",
-                      title="Dominio de decisión (verde: cumple S_out ≤ 10 ppm)",
-                      margin=dict(t=50, b=40))
+                                 marker=dict(size=13, symbol="x", color="black",
+                                             line=dict(color="white", width=1))))
+    fig.update_layout(
+        title=dict(text="Dominio de decisión (a la derecha de la línea negra se cumple S_out ≤ 10 ppm)",
+                   font=dict(size=14)),
+        xaxis_title="T_in (K)", yaxis_title="Efectividad ε",
+        legend=LEYENDA_ABAJO, margin=dict(t=60, b=90, r=20))
     return fig
 
 
-def fig_pareto(df, frontera, idx_rodilla=None):
+def fig_pareto(df, frontera, idx_rodilla=None, eje="1-X_S", log_x=True, solo_factibles=False):
+    """Frontera de Pareto. eje: '1-X_S' (el que se minimiza) o 'X_S' (maximizar conversión)."""
+    def xs(d):
+        return 1 - d["X_S"] if eje == "1-X_S" else d["X_S"]
+
     fig = go.Figure()
-    nofact = df[~df["factible"]]
+    if not solo_factibles:
+        nofact = df[~df["factible"]]
+        fig.add_trace(go.Scattergl(x=xs(nofact), y=nofact["Q_kW"], mode="markers",
+                                   name="no factible", marker=dict(size=4, color=GRIS, opacity=0.35)))
     fact = df[df["factible"]]
-    fig.add_trace(go.Scattergl(x=1 - nofact["X_S"], y=nofact["Q_kW"], mode="markers",
-                               name="no factible", marker=dict(size=4, color=GRIS, opacity=0.35)))
-    fig.add_trace(go.Scattergl(x=1 - fact["X_S"], y=fact["Q_kW"], mode="markers",
+    fig.add_trace(go.Scattergl(x=xs(fact), y=fact["Q_kW"], mode="markers",
                                name="factible", marker=dict(size=4, color=AZUL, opacity=0.4)))
     if len(frontera):
         fig.add_trace(go.Scatter(
-            x=1 - frontera["X_S"], y=frontera["Q_kW"], mode="lines+markers",
+            x=xs(frontera), y=frontera["Q_kW"], mode="lines+markers",
             name="frontera de Pareto", line=dict(color=ROJO, width=2), marker=dict(size=6),
             customdata=frontera[["T_in", "eps", "S_out"]],
-            hovertemplate="1-X_S=%{x:.5f}<br>Q=%{y:.0f} kW<br>T_in=%{customdata[0]:.1f} K"
+            hovertemplate="Q=%{y:.0f} kW<br>T_in=%{customdata[0]:.1f} K"
                           "<br>ε=%{customdata[1]:.3f}<br>S_out=%{customdata[2]:.2f} ppm<extra></extra>"))
     if idx_rodilla is not None and len(frontera):
         k = frontera.iloc[idx_rodilla]
-        fig.add_trace(go.Scatter(x=[1 - k["X_S"]], y=[k["Q_kW"]], mode="markers", name="knee point",
+        fig.add_trace(go.Scatter(x=[float(xs(k))], y=[k["Q_kW"]], mode="markers", name="knee point",
                                  marker=dict(size=16, symbol="star", color=NARANJA,
                                              line=dict(color="black", width=1))))
-    fig.update_layout(xaxis_title="1 − X_S (minimizar)", yaxis_title="Q_horno (kW) (minimizar)",
-                      title="Compromiso conversión vs. carga térmica", margin=dict(t=50, b=40))
+    etiqueta = "1 − X_S (minimizar)" if eje == "1-X_S" else "X_S (maximizar)"
+    fig.update_layout(
+        xaxis_title=etiqueta, yaxis_title="Q_horno (kW) (minimizar)",
+        title=dict(text="Compromiso conversión vs. carga térmica", font=dict(size=14)),
+        legend=LEYENDA_ABAJO, margin=dict(t=60, b=90, r=20))
+    if log_x and eje == "1-X_S":
+        fig.update_xaxes(type="log")
     return fig
 
 
@@ -67,7 +85,7 @@ def fig_tornado(sens, columna="dQ_%", titulo="Efecto sobre Q_horno"):
         fig.add_trace(go.Bar(y=[nombres[x] for x in sub["parametro"]], x=sub[columna],
                              orientation="h", name=f"{signo:+d} %", marker_color=color))
     fig.update_layout(barmode="relative", xaxis_title="Variación (%)", title=titulo,
-                      margin=dict(t=50, b=40))
+                      legend=LEYENDA_ABAJO, margin=dict(t=50, b=90))
     return fig
 
 
