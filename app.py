@@ -101,7 +101,15 @@ with tab_par:
         st.warning("Con estos parámetros ningún punto de la malla cumple S_out ≤ 10 ppm.")
     else:
         rod = frontera.iloc[idx_rodilla]
-        st.plotly_chart(graficos.fig_pareto(malla, frontera, idx_rodilla), width="stretch")
+        o1, o2, o3 = st.columns(3)
+        eje = o1.radio("Eje horizontal", ["1-X_S", "X_S"], horizontal=True,
+                       help="El problema se plantea minimizando 1 − X_S; X_S es el mismo "
+                            "objetivo visto como maximización.")
+        log_x = o2.toggle("Escala logarítmica en x", value=True, disabled=(eje == "X_S"),
+                          help="Solo aplica a 1 − X_S, que varía en varios órdenes de magnitud.")
+        solo_fact = o3.toggle("Mostrar solo puntos factibles", value=False)
+        st.plotly_chart(graficos.fig_pareto(malla, frontera, idx_rodilla, eje=eje, log_x=log_x,
+                                            solo_factibles=solo_fact), width="stretch")
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Knee point: T_in", f"{rod['T_in']:.1f} K")
@@ -232,6 +240,9 @@ with tab_mod:
              r"\qquad \text{s.a. } S_{out}\le 10\ \text{ppm}")
     st.markdown(
         "- La calibración de k₀ es pedagógica, no un dato de literatura.\n"
+        "- El incremento adiabático de 15 K a conversión completa es una elección didáctica.\n"
+        "- El intercambiador usa efectividad constante, con Cp constante y sin pérdidas.\n"
+        "- Q_horno negativo se conserva: indica excedente de calor.")de k₀ es pedagógica, no un dato de literatura.\n"
         "- El incremento adiabático de 15 K a conversión completa es una elección didáctica.\n"
         "- El intercambiador usa efectividad constante, con Cp constante y sin pérdidas.\n"
         "- Q_horno negativo se conserva: indica excedente de calor.")
