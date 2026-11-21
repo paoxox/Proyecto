@@ -1,4 +1,5 @@
 """Optimización multiobjetivo de una unidad HDS simplificada.
+
 Ejecutar con:  streamlit run app.py
 """
 import numpy as np
@@ -8,42 +9,9 @@ import streamlit as st
 from utilidades import graficos, modelo, pareto
 from utilidades.carga import calcular_frontera, calcular_malla
 
-# 1. Configuración general de la página
-st.set_page_config(
-    page_title="HDS multiobjetivo", 
-    page_icon="⚗️", 
-    layout="wide")
+st.set_page_config(page_title="HDS multiobjetivo", page_icon=":material/science:", layout="wide")
 
-# Inyectar CSS personalizado (Colores azulitos pastel y diseño limpio)
-st.markdown("""
-    <style>
-    .stApp { background-color: #f4f8fb; }
-    [data-testid="stSidebar"] { background-color: #e1ecf4; }
-    h1, h2, h3 { color: #2c4a6b !important; font-family: 'Helvetica Neue', sans-serif; }
-    [data-testid="metric-container"] {
-        background-color: #ffffff;
-        border: 1px solid #c9ddec;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
-    }
-    .stTabs [data-baseweb="tab-list"] { gap: 24px; }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: #e1ecf4;
-        border-radius: 8px 8px 0 0;
-        padding: 10px 20px;
-        color: #2c4a6b;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #ffffff !important;
-        color: #1d5b8c !important;
-        font-weight: bold;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# Valores por defecto de los controles
+# Valores por defecto de los controles (se usan también para el botón de reinicio)
 DEFAULTS = {
     "t_in": 610.0, "eps": 0.90, "m": 100_000.0, "s_in": 500.0, "cp": 2.5,
     "ea": 80_000.0, "f_k0": 1.0, "tau": 0.5, "n_t": 201, "n_e": 61,
@@ -51,14 +19,16 @@ DEFAULTS = {
 for clave, valor in DEFAULTS.items():
     st.session_state.setdefault(clave, valor)
 
+
 def reiniciar():
     for clave, valor in DEFAULTS.items():
         st.session_state[clave] = valor
 
+
 # ------------------------------------------------------------------ barra lateral
 with st.sidebar:
     st.header("Controles")
-    st.slider("Temperatura del reactor *T_in* (K)", 550.0, 650.0, step=0.5, key="t_in")
+    st.slider("Temperatura del reactor T_in (K)", 550.0, 650.0, step=0.5, key="t_in")
     st.slider("Efectividad del intercambiador ε", 0.60, 0.90, step=0.01, key="eps")
 
     with st.expander("Parámetros del modelo"):
@@ -76,7 +46,6 @@ with st.sidebar:
 
     st.button("Restablecer valores", on_click=reiniciar)
 
-# ------------------------------------------------------------------ cálculos
 ss = st.session_state
 p = modelo.Parametros(m=ss.m, s_in=ss.s_in, cp=ss.cp, ea=ss.ea,
                       k0=modelo.K0_BASE * ss.f_k0, tau=ss.tau)
@@ -85,16 +54,11 @@ malla = calcular_malla(p.m, p.s_in, p.cp, p.ea, p.k0, p.tau, ss.n_t, ss.n_e)
 frontera, idx_rodilla, dist = calcular_frontera(malla)
 actual = modelo.evaluar(ss.t_in, ss.eps, p)
 
-# ------------------------------------------------------------------ cabecera (Con Logo)
-col_logo, col_titulo = st.columns([1, 8], vertical_alignment="center")
-with col_logo:
-    # Reemplaza la URL por "logo.png" si tienes una imagen local
-    st.image("https://cdn-icons-png.flaticon.com/512/3063/3063822.png", width=90)
-with col_titulo:
-    st.title("Hidrodesulfuración de nafta: conversión vs. carga térmica")
-    st.caption("Modelo simplificado: reactor de primer orden aparente, balance adiabático pedagógico e intercambiador por efectividad.")
+# ------------------------------------------------------------------ cabecera
+st.title("Hidrodesulfuración de nafta: conversión vs. carga térmica")
+st.caption("Modelo simplificado: reactor de primer orden aparente, balance adiabático "
+           "pedagógico e intercambiador por efectividad.")
 
-# ------------------------------------------------------------------ pestañas
 tab_op, tab_par, tab_sens, tab_val, tab_mod = st.tabs(
     ["Punto de operación", "Pareto y rodilla", "Sensibilidad", "Validación", "Modelo"])
 
@@ -113,7 +77,7 @@ with tab_op:
 
     izq, der = st.columns([3, 2])
     with izq:
-        st.plotly_chart(graficos.fig_factibilidad(malla, ss.t_in, ss.eps), use_container_width=True)
+        st.plotly_chart(graficos.fig_factibilidad(malla, ss.t_in, ss.eps), width="stretch")
     with der:
         st.subheader("Temperaturas")
         st.table(pd.DataFrame({
@@ -145,7 +109,7 @@ with tab_par:
                           help="Solo aplica a 1 − X_S, que varía en varios órdenes de magnitud.")
         solo_fact = o3.toggle("Mostrar solo puntos factibles", value=False)
         st.plotly_chart(graficos.fig_pareto(malla, frontera, idx_rodilla, eje=eje, log_x=log_x,
-                                            solo_factibles=solo_fact), use_container_width=True)
+                                            solo_factibles=solo_fact), width="stretch")
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Knee point: T_in", f"{rod['T_in']:.1f} K")
@@ -185,14 +149,14 @@ with tab_par:
                 "Observación: X_S depende solo de T_in, y a T_in fijo Q_horno baja cuando ε "
                 "sube. Por eso todos los puntos con ε < ε_max quedan dominados y la frontera "
                 "se forma sobre la línea ε = 0.90.")
-            st.plotly_chart(graficos.fig_distancias(frontera, dist, idx_rodilla), use_container_width=True)
+            st.plotly_chart(graficos.fig_distancias(frontera, dist, idx_rodilla), width="stretch")
 
         with st.expander("Sensibilidad del knee point al precio de la energía (opcional)"):
             st.write("Se minimiza una suma ponderada de los objetivos normalizados; w grande "
                      "equivale a una energía más cara frente a la calidad. No es un modelo "
                      "económico completo.")
             tabla_w = pareto.rodilla_vs_peso_energia(frontera)
-            st.plotly_chart(graficos.fig_rodilla_precio(tabla_w), use_container_width=True)
+            st.plotly_chart(graficos.fig_rodilla_precio(tabla_w), width="stretch")
             st.dataframe(tabla_w, hide_index=True)
 
         st.download_button("Descargar frontera (CSV)",
@@ -214,10 +178,10 @@ with tab_sens:
     sens = modelo.sensibilidad(t_ref, e_ref, p)
     c1, c2 = st.columns(2)
     with c1:
-        st.plotly_chart(graficos.fig_tornado(sens, "dQ_%", "Efecto sobre Q_horno (%)"), use_container_width=True)
+        st.plotly_chart(graficos.fig_tornado(sens, "dQ_%", "Efecto sobre Q_horno (%)"), width="stretch")
     with c2:
         barrido = modelo.barrido_s_in(t_ref, e_ref, p)
-        st.plotly_chart(graficos.fig_s_in(barrido), use_container_width=True)
+        st.plotly_chart(graficos.fig_s_in(barrido), width="stretch")
 
     st.subheader("Perturbaciones de ±10 %")
     st.dataframe(sens, hide_index=True, column_config={
