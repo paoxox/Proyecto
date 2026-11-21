@@ -1,4 +1,3 @@
-"""Funciones que devuelven figuras de Plotly (sin dibujar nada en Streamlit)."""
 import plotly.graph_objects as go
 
 AZUL, ROJO, GRIS, VERDE, NARANJA = "#1F77B4", "#D62728", "#9AA0A6", "#2CA02C", "#FF7F0E"
@@ -13,9 +12,9 @@ def fig_factibilidad(df, t_in=None, eps=None):
     fig = go.Figure()
     fig.add_trace(go.Heatmap(
         x=z.columns, y=z.index, z=z.values, zmin=0, zmax=50, colorscale="RdYlGn_r",
-        colorbar=dict(title=dict(text="S_out (ppm)", side="right"), thickness=14, len=0.85),
+        colorbar=dict(title=dict(text="Sout (ppm)", side="right"), thickness=14, len=0.85),
         hovertemplate="T_in=%{x:.1f} K<br>ε=%{y:.3f}<br>S_out=%{z:.2f} ppm<extra></extra>",
-        name="S_out"))
+        name="Sout"))
     fig.add_trace(go.Contour(
         x=z.columns, y=z.index, z=z.values, showscale=False, hoverinfo="skip",
         contours=dict(start=10, end=10, size=1, coloring="lines"),
